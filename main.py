@@ -5,13 +5,6 @@ import random
 from data import *
 import game
 
-WINDOW_WIDTH = 1280
-WINDOW_HEIGHT = 720
-WINDOW_TITLE = f"Irisis v0.1"
-
-GRAPH_WIDTH = 100
-GRAPH_HEIGHT = 60
-
 arcade.enable_timings()
 
 global CURRENT_SCENE, TELEPORT_SCENE
@@ -28,13 +21,13 @@ class MainMenuView(arcade.View):
     def __init__(self):
         super().__init__()
         arcade.resources.load_kenney_fonts()
-        self.background_color = (17, 10, 25)
+        self.background_color = (17, 10, 25, 255)
 
         # fps指示图
         self.perf_graph_list = arcade.SpriteList()
         row_y = self.height - GRAPH_HEIGHT / 2
         starting_x = GRAPH_WIDTH / 2
-        graph = arcade.PerfGraph(GRAPH_WIDTH, GRAPH_HEIGHT, graph_data="FPS")
+        graph = arcade.PerfGraph(GRAPH_WIDTH, GRAPH_HEIGHT, graph_data="FPS", update_rate=0.05, axis_color=arcade.color.CYBER_GRAPE, grid_color=arcade.color.CYBER_GRAPE, data_line_color=arcade.color.PINK_LACE, background_color=(17, 10, 25, 255))
         graph.position = starting_x, row_y
         self.perf_graph_list.append(graph)
 
@@ -42,7 +35,7 @@ class MainMenuView(arcade.View):
         self.cached_text = []
         title_color = arcade.color.WHITE
         self.cached_text.append(arcade.Text("Irisis", 60, 200, title_color, 96, font_name="Kenney Pixel"))
-        self.cached_text.append(arcade.Text("v0.1", 60, 160, title_color, 24, font_name="Kenney Mini Square"))
+        self.cached_text.append(arcade.Text(VER, 60, 160, title_color, 24, font_name="Kenney Mini Square"))
 
         # 关门动画定义
         def close_door(s):
@@ -51,22 +44,25 @@ class MainMenuView(arcade.View):
             self.door_speed = 60
             self.door_start = s
             self.door_prog = 0
+            self.door_targetpr = 2696
         close_door(False)
         
         # 按钮
         self.manager = arcade.gui.UIManager()
         self.manager.enable() 
 
-        button_first = arcade.gui.UIFlatButton(text="first", height=36, width=160, style=DEFAULT_BUTTON_STYLE)
+        button_first = arcade.gui.UIFlatButton(text="/boot", height=32, width=240, style=DEFAULT_BUTTON_STYLE)
         @button_first.event("on_click")
         def _(event):
-            close_door(True)
+            if self.door_start == False:
+                close_door(True)
+                arcade.schedule_once(lambda _: self.window.show_view(game.GameView()), 0.75)
 
-        button_about = arcade.gui.UIFlatButton(text="关于", height=36, width=160, style=DEFAULT_BUTTON_STYLE)
+        button_about = arcade.gui.UIFlatButton(text="/info", height=32, width=140, style=DEFAULT_BUTTON_STYLE)
         @button_about.event("on_click")
         def _(event): self.window.show_view(game.GameView())
 
-        button_exit = arcade.gui.UIFlatButton(text="退出程序", height=36, width=160, style=DEFAULT_BUTTON_STYLE)
+        button_exit = arcade.gui.UIFlatButton(text="/quit", height=32, width=140, style=WARN_BUTTON_STYLE)
         @button_exit.event("on_click")
         def _(event): self.window.close()
 
@@ -103,14 +99,14 @@ class MainMenuView(arcade.View):
         self.clear()
 
         for i in self.cached_text: i.draw() # 文字
-        self.perf_graph_list.draw() # fps图
         self.manager.draw() # ui
+        self.perf_graph_list.draw() # fps
         self.mouse_particle.draw() # 鼠标粒子
 
         # 关门动画
         if self.door_start:
             r1 = arcade.Rect(
-                left = self.door_left,
+                left = 0,
                 right = 0,
                 bottom = 0,
                 top = self.height,
@@ -120,7 +116,7 @@ class MainMenuView(arcade.View):
                 y = self.height / 2
             )
             r2 = arcade.Rect(
-                left = self.door_right,
+                left = 0,
                 right = 0,
                 bottom = 0,
                 top = self.height,
@@ -129,8 +125,9 @@ class MainMenuView(arcade.View):
                 x = self.door_right+ 1410,
                 y = self.height / 2
             )
-            arcade.draw_rect_filled(r1, arcade.color.BLACK, 33)
-            arcade.draw_rect_filled(r2, arcade.color.DARK_CYAN, 33)
+            color = (64, 41, 66)
+            arcade.draw_rect_filled(r1, color, 33)
+            arcade.draw_rect_filled(r2, color, 33)
 
 
     def on_update(self, delta_time):
@@ -146,13 +143,13 @@ class MainMenuView(arcade.View):
 
         # 关门动画
         if self.door_start:
-            pr = 1800
-            if 0 <= self.door_prog < pr:
+            pr = self.door_targetpr
+            if 0 <= self.door_prog < pr: 
                 self.door_prog += self.door_speed
             elif self.door_prog >= pr:
                 self.door_start = False
-            self.door_left += self.door_speed * (pr - self.door_prog) / pr
-            self.door_right -= self.door_speed * (pr - self.door_prog) / pr
+            self.door_left += self.door_speed * ((pr - self.door_prog) / pr) ** 2
+            self.door_right -= self.door_speed * ((pr - self.door_prog) / pr) ** 2
 
 
     def on_hide_view(self):
