@@ -2,7 +2,7 @@ import arcade
 from arcade.color import * # type: ignore
 from PIL import Image, ImageDraw, ImageFont
 
-VER = "v0.2"
+VER = "v0.3"
 WINDOW_TITLE = f"Irisis {VER}"
 
 WINDOW_WIDTH = 1280
@@ -67,20 +67,23 @@ WARN_BUTTON_STYLE = \
     },
 }
 
-BLOCK_INFO = (
-        None,
-        ("草", CAL_POLY_GREEN),
-        ("土", CAPUT_MORTUUM),
-    )
+BLOCK_INFO = {
+    -1: ("您", BLACK, WHITE),
+    0: ("家", WHITE, 0),
+    1: ("草", CAL_POLY_GREEN, 0),
+    2: ("土", CAPUT_MORTUUM, 0),
+}
 
-BLOCK_IMG = []
-for block_info in BLOCK_INFO:
-    if block_info is not None:
-        t, c = block_info
+# 预渲染材质
+BLOCK_TEX = {}
+for no in BLOCK_INFO:
+    if BLOCK_INFO[no] is not None:
+        t, c1, c2 = BLOCK_INFO[no]
         font = ImageFont.truetype("assets/精品點陣體-Bold_1.9.ttf", 30)
-        img = Image.new('RGBA', (64, 64), (0, 0, 0, 0))
+        img = Image.new('RGBA', (32, 32), (0, 0, 0, 0) if c2 == 0 else c2)
         draw = ImageDraw.Draw(img)
-        draw.text((0, 0), t, font=font, fill=c)
-        BLOCK_IMG.append(img)
+        draw.text((0, 0), t, font=font, fill=c1)
+        tex = arcade.Texture(img)
+        BLOCK_TEX[no] = tex
     else:
-        BLOCK_IMG.append(None)
+        BLOCK_TEX[no] = None
